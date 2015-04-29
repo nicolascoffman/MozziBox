@@ -91,7 +91,7 @@ void loop() {
       for (uint8_t i=0; i<numKeys; i++) {
 	// if it was pressed, make your move
         if (trellis.justPressed(i)) {
-          Serial.print("key
+          Serial.print("key");
           Serial.print(i);
           Serial.println(" is pressed.");
         }
