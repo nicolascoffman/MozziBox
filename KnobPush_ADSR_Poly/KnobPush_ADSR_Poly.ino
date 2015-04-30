@@ -56,6 +56,7 @@ void setup(){
   }
   lcd.begin(16, 2);
   startMozzi(); // :))
+  Serial.begin(9600);
 }
 
 
@@ -79,14 +80,26 @@ void makeNote(){
        if(pitches[i]==polyFlags[0]){
         envelope0.noteOff();
         polyFlags[i]=0;
+        
+            Serial.print("stop Oscil 0 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
       }
       else if(pitches[i]==polyFlags[1]){
         envelope1.noteOff();
         polyFlags[i]=0;
+          
+            Serial.print("stop Oscil 1 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
       }
       else if(pitches[i]==polyFlags[2]){
         envelope2.noteOff();
         polyFlags[i]=0;
+          
+            Serial.print("stop Oscil 2 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
       }
       /* more voices
       else if(pitches[i]==polyFlags[3]){
@@ -111,14 +124,29 @@ void makeNote(){
             aOscil0.setFreq(mtof(pitches[i]));
             envelope0.noteOn();
             polyFlags[0]=pitches[i];
+            
+            Serial.print("START Oscil 0 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
+            
         } else if(polyFlags[1]==0){
             aOscil1.setFreq(mtof(pitches[i]));
             envelope1.noteOn();
             polyFlags[1]=pitches[i];
+            
+            Serial.print("START Oscil 1 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
+            
         } else if(polyFlags[2]==0){
             aOscil2.setFreq(mtof(pitches[i]));
             envelope2.noteOn();
             polyFlags[2]=pitches[i];
+            
+            Serial.print("START Oscil 2 Knob ");
+            Serial.print(i);
+            Serial.print("\n");
+            
         } 
       
       
@@ -147,7 +175,7 @@ void updateControl(){
       unsigned int attack, decay, sustain, release_ms;
       attack = 10;
       decay = 100;
-      sustain = 300;
+      sustain = 60000;
       release_ms = 90;  
   
       envelope0.setTimes(attack,decay,sustain,release_ms); 
