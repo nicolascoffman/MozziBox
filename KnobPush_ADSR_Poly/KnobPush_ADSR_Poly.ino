@@ -13,11 +13,12 @@
 LiquidCrystalFast lcd(14, 15, 16, 20, 21, 22, 23);
 // LCD pins: RS  RW  EN  D4  D5  D6  D7
 
-
+/*
 // for triggering the envelopes
 EventDelay noteDelay0;
 EventDelay noteDelay1;
 EventDelay noteDelay2;
+*/
 
 // Define params for envelopes
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope0;
@@ -96,7 +97,9 @@ void updateControl(){
       lcd.print(i);
       lcd.setCursor(0, 1);
       lcd.print(freq);     
-
+      lcd.setCursor(7, 1);
+      lcd.print("     ");     
+      
       //The Polyphonic Oscil Allocation
    
   static char whoseTurn;
@@ -104,27 +107,27 @@ void updateControl(){
        case 0:
        aOscil0.setFreq(mtof(freq));
        envelope0.noteOn();
-       noteDelay0.start(attack+decay+sustain+release_ms);
+    //   noteDelay0.start(attack+decay+sustain+release_ms);
        lcd.setCursor(7,1);
-       lcd.print("Oscil0");
+       lcd.print("A");
        whoseTurn++;
        break;
        
        case 1:
        aOscil1.setFreq(mtof(freq));
        envelope1.noteOn();
-       noteDelay1.start(attack+decay+sustain+release_ms);
-       lcd.setCursor(7,1);
-       lcd.print("Oscil1");
+   //    noteDelay1.start(attack+decay+sustain+release_ms);
+       lcd.setCursor(9,1);
+       lcd.print("B");
        whoseTurn++;
        break;
        
        case 2:
        aOscil2.setFreq(mtof(freq));
        envelope2.noteOn(); 
-       noteDelay2.start(attack+decay+sustain+release_ms);
-       lcd.setCursor(7,1);
-       lcd.print("Oscil2");
+ //      noteDelay2.start(attack+decay+sustain+release_ms);
+       lcd.setCursor(11,1);
+       lcd.print("C");
        whoseTurn=0;
        break;
        
@@ -144,18 +147,12 @@ envelope2.update();
 
 
 
+
 int updateAudio(){
 
- //    return (int) (envelope.next() *  aOscil0.next())>>8;
 
-
-  //    This is the update aduio adapted from "Multi Oscil"
-   long asig = (long)
-   aOscil0.next() * envelope0.next() +
-   aOscil1.next() * envelope1.next() +
-   aOscil2.next() * envelope2.next();
-   asig >>= 9; // shift back to audio output range?
-   return (int) asig;
+   return (int)    aOscil0.next() * envelope0.next() + aOscil1.next() * envelope1.next() +
+                  aOscil2.next() * envelope2.next() >> 8;
    
    
 }
