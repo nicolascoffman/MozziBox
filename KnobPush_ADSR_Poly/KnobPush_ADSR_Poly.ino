@@ -4,11 +4,21 @@
 #include <Oscil.h> // Sample template
 #include <EventDelay.h>
 #include <ADSR.h>
-
+#include <mozzi_midi.h>
+#include <LiquidCrystalFast.h>
 
 #include <tables/sin8192_int8.h> // a converted audio sample included in the Mozzi download
 
+// initialize the library with the numbers of the interface pins
+LiquidCrystalFast lcd(14, 15, 16, 20, 21, 22, 23);
+// LCD pins: RS  RW  EN  D4  D5  D6  D7
 
+
+// for triggering the envelope
+EventDelay noteDelay;
+
+// Define params for envelope
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
 
 // use: Sample <table_size, update_rate> SampleName (wavetable)
 Oscil <8192, AUDIO_RATE> aOscil0(SIN8192_DATA);
@@ -18,8 +28,12 @@ Oscil <8192, AUDIO_RATE> aOscil1(SIN8192_DATA);
 Oscil <8192, AUDIO_RATE> aOscil2(SIN8192_DATA);
 ; 
 
-int pitches[4] = {60, 64, 67, 69};
-int knobpin[4] = {1, 4, 7, 10};
+
+
+int pitches[4] = {
+  60, 64, 67, 69};
+int knobpin[4] = {
+  1, 4, 7, 10};
 
 #define NUM_VOICES 3
 
@@ -32,7 +46,7 @@ void setup(){
   pinMode(7, INPUT_PULLUP);
   pinMode(10, INPUT_PULLUP);  
 
-
+  lcd.begin(16, 2);
   startMozzi(); // :))
 }
 
@@ -41,40 +55,63 @@ void setup(){
 
 
 void updateControl(){
+  
+//  Set envelope params  
+      byte attack_level = 250;
+      byte decay_level = 150;
+      envelope.setADLevels(attack_level,decay_level);
+  
+      unsigned int attack, decay, sustain, release_ms;
+      attack = 10;
+      decay = 100;
+      sustain = 300;
+      release_ms = 90;  
+  
+      envelope.setTimes(attack,decay,sustain,release_ms); 
+  
+  
+// Read knobs, set freq  
   for (int i = 0; i < NUMKNOBS; i++) {
     if (digitalRead(knobpin[i]) == 0 ) {
+
+      int  freq = pitches[i];
+      aOscil0.setFreq(mtof(freq));
+      envelope.noteOn();
+      noteDelay.start(attack+decay+sustain+release_ms);
      
-     int  freq = pitches[i]
+     
+      lcd.setCursor(0, 0);
+      lcd.print(i);
+      lcd.setCursor(0, 1);
+      lcd.print(freq);     
 
-  
-  //Then Polyphonic Oscil Allocation
-
+      //Then Polyphonic Oscil Allocation
+      /*
   static char whoseTurn;
-  switch(whoseTurn){  
-  case 0:
-    aOscil0.setFreq(mtof(freq))
-      //start ADSR 
-      whoseTurn++;
-      break;
-
-  case 1:
-      aOscil1.setFreq(mtof(freq))
-      //start ADSR 
-      whoseTurn++;
-      break;
-
-  case 2:
-      aOscil2.setFreq(mtof(freq))
-      //start ADSR 
-      whoseTurn=0;
-      break;
-
+       switch(whoseTurn){  
+       case 0:
+       aOscil0.setFreq(mtof(freq));
+       //start ADSR 
+       whoseTurn++;
+       break;
+       
+       case 1:
+       aOscil1.setFreq(mtof(freq));
+       //start ADSR 
+       whoseTurn++;
+       break;
+       
+       case 2:
+       aOscil2.setFreq(mtof(freq));
+       //start ADSR 
+       whoseTurn=0;
+       break;
+       
+       }
+       */
+    }
   }
-
-
-
-
-
+  envelope.update();
 
 }
 
@@ -82,18 +119,26 @@ void updateControl(){
 
 
 int updateAudio(){
-  long asig = (long)
-    aOscil0.next() +
-      aOscil1.next() +
-      aOscil2.next();
-  asig >>= 9; // shift back to audio output range?
-  return (int) asig;
+
+     return (int) (envelope.next() *  aOscil0.next())>>8;
+//  return  aOscil0.next();
+
+  /*    This is the update aduio adapted from "Multi Oscil"
+   long asig = (long)
+   aOscil0.next() +
+   aOscil1.next() +
+   aOscil2.next();
+   asig >>= 9; // shift back to audio output range?
+   return (int) asig;
+   
+   */
 }
 
 
 void loop(){
   audioHook();
 }
+
 
 
 
