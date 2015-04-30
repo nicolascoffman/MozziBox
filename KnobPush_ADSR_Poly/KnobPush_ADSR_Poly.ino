@@ -19,8 +19,10 @@ EventDelay noteDelay0;
 EventDelay noteDelay1;
 EventDelay noteDelay2;
 
-// Define params for envelope
-ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
+// Define params for envelopes
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope0;
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope1;
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope2;
 
 
 // use: Sample <table_size, update_rate> SampleName (wavetable)
@@ -62,7 +64,9 @@ void updateControl(){
 //  Set envelope params  
       byte attack_level = 250;
       byte decay_level = 150;
-      envelope.setADLevels(attack_level,decay_level);
+      envelope0.setADLevels(attack_level,decay_level);
+      envelope1.setADLevels(attack_level,decay_level);
+      envelope2.setADLevels(attack_level,decay_level);
   
       unsigned int attack, decay, sustain, release_ms;
       attack = 10;
@@ -70,8 +74,9 @@ void updateControl(){
       sustain = 300;
       release_ms = 90;  
   
-      envelope.setTimes(attack,decay,sustain,release_ms); 
-  
+      envelope0.setTimes(attack,decay,sustain,release_ms); 
+      envelope1.setTimes(attack,decay,sustain,release_ms);
+      envelope2.setTimes(attack,decay,sustain,release_ms);  
   
 // Read knobs, set freq  
   for (int i = 0; i < NUMKNOBS; i++) {
@@ -98,7 +103,7 @@ void updateControl(){
        switch(whoseTurn){  
        case 0:
        aOscil0.setFreq(mtof(freq));
-       envelope.noteOn();
+       envelope0.noteOn();
        noteDelay0.start(attack+decay+sustain+release_ms);
        lcd.setCursor(7,1);
        lcd.print("Oscil0");
@@ -107,7 +112,7 @@ void updateControl(){
        
        case 1:
        aOscil1.setFreq(mtof(freq));
-       envelope.noteOn();
+       envelope1.noteOn();
        noteDelay1.start(attack+decay+sustain+release_ms);
        lcd.setCursor(7,1);
        lcd.print("Oscil1");
@@ -116,8 +121,8 @@ void updateControl(){
        
        case 2:
        aOscil2.setFreq(mtof(freq));
-       envelope.noteOn(); 
-       noteDelay0.start(attack+decay+sustain+release_ms);
+       envelope2.noteOn(); 
+       noteDelay2.start(attack+decay+sustain+release_ms);
        lcd.setCursor(7,1);
        lcd.print("Oscil2");
        whoseTurn=0;
@@ -129,7 +134,10 @@ void updateControl(){
 
     }
   }
-         envelope.update();
+//Update envelopes  
+envelope0.update();
+envelope1.update();
+envelope2.update();
 
 }
 
@@ -138,18 +146,18 @@ void updateControl(){
 
 int updateAudio(){
 
-     return (int) (envelope.next() *  aOscil0.next())>>8;
-//  return  aOscil0.next();
+ //    return (int) (envelope.next() *  aOscil0.next())>>8;
 
-  /*    This is the update aduio adapted from "Multi Oscil"
+
+  //    This is the update aduio adapted from "Multi Oscil"
    long asig = (long)
-   aOscil0.next() +
-   aOscil1.next() +
-   aOscil2.next();
+   aOscil0.next() * envelope0.next() +
+   aOscil1.next() * envelope1.next() +
+   aOscil2.next() * envelope2.next();
    asig >>= 9; // shift back to audio output range?
    return (int) asig;
    
-   */
+   
 }
 
 
