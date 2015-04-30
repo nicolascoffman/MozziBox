@@ -14,11 +14,14 @@ LiquidCrystalFast lcd(14, 15, 16, 20, 21, 22, 23);
 // LCD pins: RS  RW  EN  D4  D5  D6  D7
 
 
-// for triggering the envelope
-EventDelay noteDelay;
+// for triggering the envelopes
+EventDelay noteDelay0;
+EventDelay noteDelay1;
+EventDelay noteDelay2;
 
 // Define params for envelope
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
+
 
 // use: Sample <table_size, update_rate> SampleName (wavetable)
 Oscil <8192, AUDIO_RATE> aOscil0(SIN8192_DATA);
@@ -73,45 +76,60 @@ void updateControl(){
 // Read knobs, set freq  
   for (int i = 0; i < NUMKNOBS; i++) {
     if (digitalRead(knobpin[i]) == 0 ) {
-
+  
+      //Set pitch
       int  freq = pitches[i];
+/*    
+//     start note 
       aOscil0.setFreq(mtof(freq));
       envelope.noteOn();
       noteDelay.start(attack+decay+sustain+release_ms);
+ */    
      
-     
+//     FEEDBACK
       lcd.setCursor(0, 0);
       lcd.print(i);
       lcd.setCursor(0, 1);
       lcd.print(freq);     
 
-      //Then Polyphonic Oscil Allocation
-      /*
+      //The Polyphonic Oscil Allocation
+   
   static char whoseTurn;
        switch(whoseTurn){  
        case 0:
        aOscil0.setFreq(mtof(freq));
-       //start ADSR 
+       envelope.noteOn();
+       noteDelay0.start(attack+decay+sustain+release_ms);
+       lcd.setCursor(7,1);
+       lcd.print("Oscil0");
        whoseTurn++;
        break;
        
        case 1:
        aOscil1.setFreq(mtof(freq));
-       //start ADSR 
+       envelope.noteOn();
+       noteDelay1.start(attack+decay+sustain+release_ms);
+       lcd.setCursor(7,1);
+       lcd.print("Oscil1");
        whoseTurn++;
        break;
        
        case 2:
        aOscil2.setFreq(mtof(freq));
-       //start ADSR 
+       envelope.noteOn(); 
+       noteDelay0.start(attack+decay+sustain+release_ms);
+       lcd.setCursor(7,1);
+       lcd.print("Oscil2");
        whoseTurn=0;
        break;
        
        }
-       */
+
+       
+
     }
   }
-  envelope.update();
+         envelope.update();
 
 }
 
