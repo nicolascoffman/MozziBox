@@ -27,7 +27,19 @@ void makeNote(){
     current[i] = digitalRead(knobpin[i]);
 
     //if newly 0
-    if (current[i] == 0 && previous[i] == 1) {
+
+    if (current[i] == 1 && previous[i] == 0) {
+      //make a message for noteStop
+      lcd.setCursor(i, 0);
+      lcd.write(" ");
+
+      //then set previous to 0
+      previous[i] = 1;
+    }
+
+    //HOWEVER
+    //if newly 0
+    else   if (current[i] == 0 && previous[i] == 1) {
 
       //make a message for noteStart
       lcd.setCursor(i, 0);
@@ -36,21 +48,11 @@ void makeNote(){
       //then set previous to 0
       previous[i] = 0;
     }
-    //HOWEVER
-    //if newly 1
-
-    else if (current[i] == 1 && previous[i] == 0) {
-      //make a message for noteStop
-      lcd.setCursor(i, 0);
-      lcd.write(" ");
-
-      //then set previous to 0
-      previous[i] = 1;
-    }     
   }
 }
 
 void loop(){
   makeNote();
 }
+
 

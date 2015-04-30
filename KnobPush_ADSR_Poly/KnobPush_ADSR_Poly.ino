@@ -7,24 +7,36 @@
 #include <mozzi_midi.h>
 #include <LiquidCrystalFast.h>
 
-#include <tables/sin8192_int8.h> // a converted audio sample included in the Mozzi download
+
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystalFast lcd(14, 15, 16, 20, 21, 22, 23);
 // LCD pins: RS  RW  EN  D4  D5  D6  D7
 
-/*
-// for triggering the envelopes
-EventDelay noteDelay0;
-EventDelay noteDelay1;
-EventDelay noteDelay2;
-*/
+//what is the difference between these two ways of declaring variables?
+const int NUMKNOBS = 4;
+#define NUM_VOICES 3
+
+int pitches[NUMKNOBS] = {
+60, 64, 67, 69};
+
+int knobpin[NUMKNOBS] = {
+  1, 4, 7, 10};
+  
+  
+int current[NUMKNOBS];
+int previous[NUMKNOBS];
+
+int polyFlags[NUM_VOICES];
+
 
 // Define params for envelopes
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope0;
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope1;
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope2;
 
+
+#include <tables/sin8192_int8.h> // a converted audio sample included in the Mozzi download
 
 // use: Sample <table_size, update_rate> SampleName (wavetable)
 Oscil <8192, AUDIO_RATE> aOscil0(SIN8192_DATA);
@@ -36,28 +48,91 @@ Oscil <8192, AUDIO_RATE> aOscil2(SIN8192_DATA);
 
 
 
-int pitches[4] = {
-  60, 64, 67, 69};
-int knobpin[4] = {
-  1, 4, 7, 10};
 
-#define NUM_VOICES 3
-
-
-const int NUMKNOBS = 4;
 
 void setup(){
-  pinMode(1, INPUT_PULLUP);
-  pinMode(4, INPUT_PULLUP);
-  pinMode(7, INPUT_PULLUP);
-  pinMode(10, INPUT_PULLUP);  
-
+  for (int i = 0; i < NUMKNOBS; i++) {
+    pinMode(knobpin[i], INPUT_PULLUP);
+  }
   lcd.begin(16, 2);
   startMozzi(); // :))
 }
 
 
 
+
+//Function to create noteOn and noteOff methods
+void makeNote(){
+
+
+  for (int i = 0; i < NUMKNOBS; i++) {
+
+    //update all pins
+    current[i] = digitalRead(knobpin[i]);
+
+    //if pin is newly 0
+
+    if (current[i] == 1 && previous[i] == 0) {
+      //make a message for noteOff
+
+     
+       if(pitches[i]==polyFlags[0]){
+        envelope0.noteOff();
+        polyFlags[i]=0;
+      }
+      else if(pitches[i]==polyFlags[1]){
+        envelope1.noteOff();
+        polyFlags[i]=0;
+      }
+      else if(pitches[i]==polyFlags[2]){
+        envelope2.noteOff();
+        polyFlags[i]=0;
+      }
+      /* more voices
+      else if(pitches[i]==polyFlags[3]){
+        envelope3.noteOff();
+        polyFlags[i]=0;
+      }   
+     */
+  /*    
+      //show me the money
+      lcd.setCursor(i, 0);
+      lcd.write(" ");
+*/
+      //then set previous to 0
+      previous[i] = 1;
+    }
+
+    //HOWEVER
+    //if pin newly 0
+    else if (current[i] == 0 && previous[i] == 1) {
+        
+        if(polyFlags[0]==0){
+            aOscil0.setFreq(mtof(pitches[i]));
+            envelope0.noteOn();
+            polyFlags[0]=pitches[i];
+        } else if(polyFlags[1]==0){
+            aOscil1.setFreq(mtof(pitches[i]));
+            envelope1.noteOn();
+            polyFlags[1]=pitches[i];
+        } else if(polyFlags[2]==0){
+            aOscil2.setFreq(mtof(pitches[i]));
+            envelope2.noteOn();
+            polyFlags[2]=pitches[i];
+        } 
+      
+      
+      
+/*
+      //make a message for noteOn
+      lcd.setCursor(i, 0);
+      lcd.write(i);
+*/
+      //then set previous to 0
+      previous[i] = 0;
+    }
+  }
+}
 
 
 void updateControl(){
@@ -78,65 +153,10 @@ void updateControl(){
       envelope0.setTimes(attack,decay,sustain,release_ms); 
       envelope1.setTimes(attack,decay,sustain,release_ms);
       envelope2.setTimes(attack,decay,sustain,release_ms);  
+ 
+ 
+  makeNote();
   
-// Read knobs, set freq  
-  for (int i = 0; i < NUMKNOBS; i++) {
-    if (digitalRead(knobpin[i]) == 0 ) {
-  
-      //Set pitch
-      int  freq = pitches[i];
-/*    
-//     start note 
-      aOscil0.setFreq(mtof(freq));
-      envelope.noteOn();
-      noteDelay.start(attack+decay+sustain+release_ms);
- */    
-     
-//     FEEDBACK
-      lcd.setCursor(0, 0);
-      lcd.print(i);
-      lcd.setCursor(0, 1);
-      lcd.print(freq);     
-      lcd.setCursor(7, 1);
-      lcd.print("     ");     
-      
-      //The Polyphonic Oscil Allocation
-   
-  static char whoseTurn;
-       switch(whoseTurn){  
-       case 0:
-       aOscil0.setFreq(mtof(freq));
-       envelope0.noteOn();
-    //   noteDelay0.start(attack+decay+sustain+release_ms);
-       lcd.setCursor(7,1);
-       lcd.print("A");
-       whoseTurn++;
-       break;
-       
-       case 1:
-       aOscil1.setFreq(mtof(freq));
-       envelope1.noteOn();
-   //    noteDelay1.start(attack+decay+sustain+release_ms);
-       lcd.setCursor(9,1);
-       lcd.print("B");
-       whoseTurn++;
-       break;
-       
-       case 2:
-       aOscil2.setFreq(mtof(freq));
-       envelope2.noteOn(); 
- //      noteDelay2.start(attack+decay+sustain+release_ms);
-       lcd.setCursor(11,1);
-       lcd.print("C");
-       whoseTurn=0;
-       break;
-       
-       }
-
-       
-
-    }
-  }
 //Update envelopes  
 envelope0.update();
 envelope1.update();
