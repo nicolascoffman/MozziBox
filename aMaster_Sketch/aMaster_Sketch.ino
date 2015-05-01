@@ -1,34 +1,3 @@
-  /*
-                                     Example using a piezo to trigger an audio sample to play,
-   and a knob to set the playback pitch,
-   with Mozzi sonification library.
-   
-   Demonstrates one-shot samples and analog input for control.
-   
-   This example goes with a tutorial on the Mozzi site:
-   http://sensorium.github.io/Mozzi/learn/introductory-tutorial/
-   
-   The circuit:
-   Audio output on digital pin 9 on a Uno or similar, or
-   DAC/A14 on Teensy 3.0/3.1, or 
-   check the README or http://sensorium.github.com/Mozzi/
-   
-   Potentiometer connected to analog pin 0.
-   Center pin of the potentiometer goes to the analog pin.
-   Side pins of the potentiometer go to +5V and ground
-   
-   Piezo on analog pin 3:
-   + connection of the piezo attached to the analog pin
-   - connection of the piezo attached to ground
-   1-megohm resistor between the analog pin and ground
-   
-   Mozzi help/discussion/announcements:
-   https://groups.google.com/forum/#!forum/mozzi-users
-   
-   Tim Barrass 2013.
-   CC by-nc-sa
-   */
-  
   #include <ADC.h>  // Teensy 3.0/3.1 uncomment this line and install http://github.com/pedvide/ADC
   #include <MozziGuts.h>
   #include <Oscil.h>
@@ -37,6 +6,7 @@
   #include <samples/burroughs1_18649_int8.h> // a converted audio sample included in the Mozzi download
   
   #include <ADSR.h>
+  #include <mozzi_midi.h>
   #include <EventDelay.h>
   #include <mozzi_midi.h>
   #include <LiquidCrystalFast.h>
@@ -138,8 +108,6 @@
   Oscil <8192, AUDIO_RATE> oscilator[NUM_VOICES] = {
     aOscil0, aOscil1, aOscil2};
   
-  #define CONTROL_RATE 64
-  
   //  float recorded_pitch = (float) BAMBOO_00_2048_SAMPLERATE / (float) BAMBOO_00_2048_NUM_CELLS ;
   //  Sample <BAMBOO_00_2048_NUM_CELLS, AUDIO_RATE> aSample(BAMBOO_00_2048_DATA); 
   
@@ -193,7 +161,7 @@
   
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
-  void playNote(int note, int voice) {
+  void playNote(uint8_t note, uint8_t voice) {
   
     if (voice == NUM_VOICES) {
       oscilator[0].setFreq((mtof(pitches[note])));
@@ -254,9 +222,10 @@
   }
   
   void setEnvelopeParams (long new1, long new2, long new3, long new4) {
-    int ratio =  map(new3, 50, -50, 1, 5);
+    byte ratio =  map(new3, 50, -50, 1, 5);
   
-    int val =  255/(ratio+1);
+    uint8_t val =  255/(ratio+1);
+    //uint8_t val = 255;
   
   
     byte attack_level = val*ratio;
@@ -358,7 +327,7 @@
     }
   
     // Read Trellis input    
-    if (trellis.readSwitches() && del.ready()) {
+    if (trellis.readSwitches() ) {
       for (uint8_t i=0; i < numKeys; i++) {
         if (trellis.justPressed(i)) {
           // Illuminate LED
@@ -369,7 +338,7 @@
           aSample.start();
   
           //samples[i].start();
-          del.start();
+          
         } 
       }
     }
@@ -384,7 +353,7 @@
     int trellisOut = aSample.next();
     
     
-    return trellisOut;
+    return knobsOut;
   }
   
   void loop() {
