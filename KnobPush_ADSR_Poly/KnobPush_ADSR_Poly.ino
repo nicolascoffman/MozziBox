@@ -6,7 +6,20 @@
 #include <ADSR.h>
 #include <mozzi_midi.h>
 #include <LiquidCrystalFast.h>
-#include <RCpoll.h>
+#include <Encoder.h>
+
+//Encoder setup
+Encoder knob1(2, 3);
+Encoder knob2(5, 6);
+Encoder knob3(8, 9);
+Encoder knob4(11, 12);
+
+long position1  = -999;
+long position2  = -999;
+long position3  = -999;
+long position4  = -999;
+
+
 
 
 //what is the difference between these two ways of declaring variables?
@@ -14,7 +27,7 @@ const int NUMKNOBS = 4;
 #define NUM_VOICES 3
 
 int pitches[NUMKNOBS] = {
-  60, 64, 67, 69};
+  57, 61, 64, 66};
 
 int knobpin[NUMKNOBS] = {
   1, 4, 7, 10};
@@ -33,7 +46,7 @@ boolean previous[NUMKNOBS];
 int storage[NUMKNOBS];
 
 
-
+// ADSR Stuff
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope0;
 ;
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope1;
@@ -70,7 +83,26 @@ void setup(){
 
   for(int f=0; f<NUM_VOICES; f++){
     envelope[f].noteOff();
-  }
+  
+
+    //  Set envelope params  
+  byte attack_level = 250;
+  byte decay_level = 150;
+  envelope[0].setADLevels(attack_level,decay_level);
+  envelope[1].setADLevels(attack_level,decay_level);
+  envelope[2].setADLevels(attack_level,decay_level);
+
+  unsigned int attack, decay, sustain, release_ms;
+  attack = 10;
+  decay = 100;
+  sustain = 6000;
+  release_ms = 50;  
+
+  envelope[0].setTimes(attack,decay,sustain,release_ms); 
+  envelope[1].setTimes(attack,decay,sustain,release_ms);
+  envelope[2].setTimes(attack,decay,sustain,release_ms);  
+
+}
 
 }
 
@@ -140,27 +172,88 @@ void buttonMessages(){
 
 void updateControl(){
 
-
-
-
-
-  //  Set envelope params  
-  byte attack_level = 250;
-  byte decay_level = 150;
+long new1, new2, new3, new4;
+  new1 = constrain(knob1.read(), -100, 100);
+  new2 = constrain(knob2.read(), -100, 100);
+  new3 = constrain(knob3.read(), -50, 50);
+  new4 = constrain(knob4.read(), -100, 100);
+  
+ 
+  if (new1 != position1 || new2 != position2 || new3 != position3 || new4 != position4) {
+    
+    //  Set envelope params  
+    int ratio =  map(new3, 50, -50, 1, 5);
+    
+   int val =  255/(ratio+1);
+    
+    
+  byte attack_level = val*ratio;
+  byte decay_level = val;
   envelope[0].setADLevels(attack_level,decay_level);
   envelope[1].setADLevels(attack_level,decay_level);
   envelope[2].setADLevels(attack_level,decay_level);
 
   unsigned int attack, decay, sustain, release_ms;
-  attack = 10;
-  decay = 100;
+  attack = map(new1, 100, -100, 50, 999);
+  decay =  map(new2, 100, -100, 50, 999);
   sustain = 6000;
-  release_ms = 600;  
+  release_ms =  map(new4, -100, 100, 100, 999);  
 
   envelope[0].setTimes(attack,decay,sustain,release_ms); 
   envelope[1].setTimes(attack,decay,sustain,release_ms);
   envelope[2].setTimes(attack,decay,sustain,release_ms);  
 
+
+//Update Display
+  lcd.setCursor(0, 0);
+      lcd.print("Atk");
+      if(attack<100){
+
+  lcd.setCursor(0, 1);
+      lcd.print(" ");
+     lcd.setCursor(1, 1);      
+      lcd.print(attack);
+      }else{
+        lcd.setCursor(0, 1);
+        lcd.print(attack);
+      }
+      
+  lcd.setCursor(4, 0);
+    lcd.print("Dcy");
+          if(decay<100){
+  lcd.setCursor(4, 1);
+      lcd.print(" ");
+     lcd.setCursor(5, 1);      
+      lcd.print(decay);
+      }else{
+    lcd.setCursor(4, 1);
+    lcd.print(decay);
+      }
+
+    
+   lcd.setCursor(8, 0);
+      lcd.print("Rat");
+   lcd.setCursor(8, 1);
+      lcd.print(ratio);
+   lcd.setCursor(9, 1);
+      lcd.print(":1");
+      
+  lcd.setCursor(12, 0);
+    lcd.print("Rel");
+  lcd.setCursor(12, 1);
+    lcd.print(release_ms);
+    
+
+//Update Positions
+    position1 = new1;
+    position2 = new2;
+    position3 = new3;
+    position4 = new4;
+   
+  }
+
+ 
+  
 
   buttonMessages();
 
@@ -169,17 +262,6 @@ void updateControl(){
   //Update envelopes
   for(int q=0; q<NUM_VOICES; q++){
     envelope[q].update();
-
-
-    Serial.print("    Envelope ");
-    Serial.print(q);
-    if(envelope[q].playing()==false){
-      Serial.println(" is dead");
-    }
-    else     if(envelope[q].playing()==true){
-      Serial.println(" is playing");
-    }  
-
 
 
   }
