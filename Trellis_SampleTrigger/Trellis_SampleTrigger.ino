@@ -1,5 +1,5 @@
   /*
-       Example using a piezo to trigger an audio sample to play,
+           Example using a piezo to trigger an audio sample to play,
    and a knob to set the playback pitch,
    with Mozzi sonification library.
    
@@ -49,7 +49,9 @@
   #include <samples/bamboo/bamboo_09_2048_int8.h> // wavetable data
   #include <samples/bamboo/bamboo_10_2048_int8.h> // wavetable data
   
-  const int8_t * tables[11] ={
+  
+  
+  const int8_t * tables[16] ={
     BAMBOO_00_2048_DATA,
     BAMBOO_01_2048_DATA,
     BAMBOO_02_2048_DATA,
@@ -60,7 +62,7 @@
     BAMBOO_07_2048_DATA,
     BAMBOO_08_2048_DATA,
     BAMBOO_09_2048_DATA,
-    BAMBOO_10_2048_DATA
+    BAMBOO_10_2048_DATA,
   };
   
   // Trellis stuff ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,6 +79,7 @@
   
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   EventDelay del;
+  EventDelay lightDel;
   
   const char KNOB_PIN = 1;  // set the analog input pin for the knob
   const char PIEZO_PIN = 3;  // set the analog input pin for the piezo 
@@ -92,14 +95,25 @@
   
   void setup(){
   
+    // Set EventDelays
     del.set(50);
+    lightDel.set(500);
+  
   
     pinMode(1, INPUT_PULLUP);
+  
+  
   
     // Initialize trellis
     pinMode(INTPIN, INPUT);
     digitalWrite(INTPIN, HIGH);
     trellis.begin(0x70); // Trellis address
+  
+    //Clear LEDs
+    for (uint8_t i=0; i < numKeys; i++) {
+      trellis.clrLED(i); 
+    }
+    trellis.writeDisplay();
   
     Serial.begin(9600); // for Teensy 3.0/3.1, beware printout can cause glitches
     //  Serial.begin(115200); // set up the Serial output so we can look at the piezo values // set up the Serial output so we can look at the piezo values
@@ -118,21 +132,38 @@
     // set the sample playback frequency
     aSample.setFreq(pitch);
   
-    if (trellis.readSwitches() && del.ready()) {
-      for (uint8_t i=0; i < 11; i++) {
-        if (trellis.justReleased(i)) {
-          aSample.setTable(tables[i]);
-          aSample.start();
-          //samples[i].start();
-          del.start();
-        }
+    // Clear trellis lights periodically
+    if (lightDel.ready()) {
+      for (uint8_t i=0; i < numKeys; i++) {
+        trellis.clrLED(i);
       }
     }
+  
+  
+    // Read Trellis input    
+    if (trellis.readSwitches() && del.ready()) {
+      for (uint8_t i=0; i < numKeys; i++) {
+        if (trellis.justPressed(i)) {
+          // Illuminate LED
+          trellis.setLED(i);
+  
+          // Play corresponding sample
+          aSample.setTable(tables[i]);
+          aSample.start();
+  
+          //samples[i].start();
+          del.start();
+        } 
+        
+      }
+    }
+    trellis.writeDisplay(); //Change LEDs
+  
   }
   
   
   int updateAudio() {
-    
+  
   
     return aSample.next();
   }
@@ -141,6 +172,9 @@
   void loop() {
     audioHook();
   }
+  
+  
+  
   
   
   
