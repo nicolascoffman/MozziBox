@@ -6,6 +6,7 @@
 #include <ADSR.h>
 #include <mozzi_midi.h>
 #include <LiquidCrystalFast.h>
+#include <RCpoll.h>
 
 
 //what is the difference between these two ways of declaring variables?
@@ -63,65 +64,48 @@ void setup(){
     pinMode(knobpin[i], INPUT_PULLUP);
   }
   lcd.begin(16, 2);
-    Serial.begin(9600);
-    
+  Serial.begin(9600);
+
   startMozzi(); // :))
 
-for(int f=0; f<NUM_VOICES; f++){
-  envelope[f].noteOff();
-}
+  for(int f=0; f<NUM_VOICES; f++){
+    envelope[f].noteOff();
+  }
 
 }
 
 
 void playNote(int note, int z){
-if (z==NUM_VOICES-1){
+
+  if (z==NUM_VOICES){
     oscilator[0].setFreq((mtof(pitches[note])));
     envelope[0].noteOn();
-      Serial.print("THREE");
-    Serial.print(z);
-}else  if(envelope[z].playing()==false){
-    Serial.print("ZERO");
-    Serial.print(z);
-
+    
+    //find O in storage[];
+    for(int repl=0; repl<NUMKNOBS; repl++){
+      if(storage[repl] == 0){
+    //replace it with -1
+        storage[repl]=-1;
+      }
+    }
+     storage[note]=0;
+  }
+  else  if(envelope[z].playing()==false){
     oscilator[z].setFreq((mtof(pitches[note])));
     envelope[z].noteOn();
     //Store note value
     storage[note]=z;
 
-}  else if(envelope[z].playing()==true){
-    Serial.print("ONE");
-    Serial.print(z);
-    playNote(note, z++);
+  }  
+  else if(envelope[z].playing()==true){
+    playNote(note, z+1);
   }
 
 }
 
 
 void stopNote(int note){
-  Serial.println("stopNote called");
-  Serial.println(note);
-       Serial.print("    Envelope is  ");
-    if(envelope[storage[note]].playing()==false){
-      Serial.println("dead");
-    }
-    else     if(envelope[storage[note]].playing()==true){
-      Serial.println("playing");
-    }
-   envelope[storage[note]].noteOff();
-   Serial.print("stop Pitch ");
-   Serial.print(note);
-   Serial.print("    Oscilator ");
-   Serial.print(storage[note]);
-   Serial.print("\n");  
-        Serial.print("    Envelope is  ");
-    if(envelope[storage[note]].playing()==false){
-      Serial.println("dead");
-    }
-    else     if(envelope[storage[note]].playing()==true){
-      Serial.println("playinggggg");
-    }
-
+  envelope[storage[note]].noteOff();
 }
 
 
@@ -156,10 +140,10 @@ void buttonMessages(){
 
 void updateControl(){
 
-    
-    
-    
-    
+
+
+
+
   //  Set envelope params  
   byte attack_level = 250;
   byte decay_level = 150;
@@ -170,8 +154,8 @@ void updateControl(){
   unsigned int attack, decay, sustain, release_ms;
   attack = 10;
   decay = 100;
-  sustain = 60000;
-  release_ms = 90;  
+  sustain = 6000;
+  release_ms = 600;  
 
   envelope[0].setTimes(attack,decay,sustain,release_ms); 
   envelope[1].setTimes(attack,decay,sustain,release_ms);
@@ -183,9 +167,22 @@ void updateControl(){
 
 
   //Update envelopes
-for(int q=0; q<NUM_VOICES; q++){
-  envelope[q].update();
-}
+  for(int q=0; q<NUM_VOICES; q++){
+    envelope[q].update();
+
+
+    Serial.print("    Envelope ");
+    Serial.print(q);
+    if(envelope[q].playing()==false){
+      Serial.println(" is dead");
+    }
+    else     if(envelope[q].playing()==true){
+      Serial.println(" is playing");
+    }  
+
+
+
+  }
 }
 
 
@@ -205,6 +202,7 @@ int updateAudio(){
 void loop(){
   audioHook();
 }
+
 
 
 
