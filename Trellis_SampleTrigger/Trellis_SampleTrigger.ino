@@ -37,8 +37,6 @@
 
 // Bamboo Samples ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#include <samples/bamboo/bamboo_00_2048_int8.h> // wavetable data
-#include <samples/bamboo/bamboo_01_2048_int8.h> // wavetable data
 #include <samples/bamboo/bamboo_02_2048_int8.h> // wavetable data
 #include <samples/bamboo/bamboo_03_2048_int8.h> // wavetable data
 #include <samples/bamboo/bamboo_04_2048_int8.h> // wavetable data
@@ -58,10 +56,8 @@
 #include <samples/strike.h>
 
 
-
+// Defines our data tables
 const int8_t * tables[16] ={
-//  BAMBOO_00_2048_DATA,
-//  BAMBOO_01_2048_DATA,
   BAMBOO_02_2048_DATA,
   BAMBOO_03_2048_DATA,
   BAMBOO_04_2048_DATA,
@@ -78,8 +74,53 @@ const int8_t * tables[16] ={
   kick_DATA,
   snare_DATA,
   strike_DATA
-  
 };
+
+// Hold sample rates
+const int sampleRates[16] {
+  BAMBOO_02_2048_SAMPLERATE,
+  BAMBOO_03_2048_SAMPLERATE,
+  BAMBOO_04_2048_SAMPLERATE,
+  BAMBOO_05_2048_SAMPLERATE,
+  BAMBOO_06_2048_SAMPLERATE,
+  BAMBOO_07_2048_SAMPLERATE,
+  BAMBOO_08_2048_SAMPLERATE,
+  BAMBOO_09_2048_SAMPLERATE,
+  BAMBOO_10_2048_SAMPLERATE,
+  Blop_SAMPLERATE,
+  clap_SAMPLERATE,
+  HH_closed_SAMPLERATE,
+  HH_open_SAMPLERATE,
+  kick_SAMPLERATE,
+  snare_SAMPLERATE,
+  strike_SAMPLERATE
+};
+
+// Hold number of cells
+const int numCells[16] {
+  BAMBOO_02_2048_NUM_CELLS,
+  BAMBOO_03_2048_NUM_CELLS,
+  BAMBOO_04_2048_NUM_CELLS,
+  BAMBOO_05_2048_NUM_CELLS,
+  BAMBOO_06_2048_NUM_CELLS,
+  BAMBOO_07_2048_NUM_CELLS,
+  BAMBOO_08_2048_NUM_CELLS,
+  BAMBOO_09_2048_NUM_CELLS,
+  BAMBOO_10_2048_NUM_CELLS,
+  Blop_NUM_CELLS,
+  clap_NUM_CELLS,
+  HH_closed_NUM_CELLS,
+  HH_open_NUM_CELLS,
+  kick_NUM_CELLS,
+  snare_NUM_CELLS,
+  strike_NUM_CELLS
+};
+
+
+// use: Sample <table_size, update_rate> SampleName (wavetable)
+//  Sample <BURROUGHS1_18649_NUM_CELLS, AUDIO_RATE> aSample(BURROUGHS1_18649_DATA);
+float recorded_pitch = (float) BAMBOO_02_2048_SAMPLERATE / (float) BAMBOO_02_2048_NUM_CELLS;
+Sample <BAMBOO_02_2048_NUM_CELLS, AUDIO_RATE> aSample(BAMBOO_02_2048_DATA); 
 
 // Trellis stuff ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #include <i2c_t3.h>
@@ -92,38 +133,19 @@ Adafruit_TrellisSet trellis = Adafruit_TrellisSet(&matrix);
 #define numKeys (NUMTRELLIS * 16)
 
 #define INTPIN 31
+boolean triggered[16];  // For controlling Trellis key presses
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EventDelay del;
-EventDelay lightDel;
-
-const char KNOB_PIN = 1;  // set the analog input pin for the knob
-const char PIEZO_PIN = 3;  // set the analog input pin for the piezo 
-const int threshold = 80;  // threshold value to decide when the detected signal is a knock or not
-
-// use: Sample <table_size, update_rate> SampleName (wavetable)
-//  Sample <BURROUGHS1_18649_NUM_CELLS, AUDIO_RATE> aSample(BURROUGHS1_18649_DATA);
-float recorded_pitch = (float) BURROUGHS1_18649_SAMPLERATE / (float) BURROUGHS1_18649_NUM_CELLS;
-Sample <BURROUGHS1_18649_NUM_CELLS, AUDIO_RATE> aSample(BAMBOO_00_2048_DATA); 
-
-
-boolean triggered[16]; 
 
 void setup(){
 
-  // Set EventDelays
-  del.set(2 0);
-  lightDel.set(500);
-  
+  del.set(30);   // Set EventDelay
+
   // Set key trigger array
   for (uint8_t i=0; i < numKeys; i++) {
     triggered[i] = false; 
   }
-
-
-  pinMode(1, INPUT_PULLUP);
-
-
 
   // Initialize trellis
   pinMode(INTPIN, INPUT);
@@ -137,28 +159,11 @@ void setup(){
   trellis.writeDisplay();
 
   Serial.begin(9600); // for Teensy 3.0/3.1, beware printout can cause glitches
-  //  Serial.begin(115200); // set up the Serial output so we can look at the piezo values // set up the Serial output so we can look at the piezo values
-  startMozzi(); // :))
+  startMozzi();
 }
 
 
 void updateControl(){
-  // read the knob
-  //  int knob_value = mozziAnalogRead(KNOB_PIN); // value is 0-1023
-  int knob_value = digitalRead(1);
-
-  // map it to values between 0.1 and about double the recorded pitch
-  float pitch = (recorded_pitch * (float) 512 / 512.f) + 0.1f; 
-
-  // set the sample playback frequency
-  aSample.setFreq(pitch);
-
-  // Clear trellis lights periodically
-  if (lightDel.ready()) {
-    for (uint8_t i=0; i < numKeys; i++) {
-      //trellis.clrLED(i);
-    }
-  }
 
   // Read Trellis input
   if (del.ready()) {
@@ -167,16 +172,18 @@ void updateControl(){
 
         if (!triggered[i]) {
           if (trellis.justPressed(i)) {
-            
+
             trellis.setLED(i);
             triggered[i] = true;
-            // Play corresponding sample
+            
             aSample.setTable(tables[i]);
+            aSample.setFreq((float) sampleRates[i] / (float) numCells[i]);
             aSample.start();
 
             //samples[i].start();
           }  
-        } else {
+        } 
+        else {
           if (trellis.justReleased(i)) {
             triggered[i] = false;
             trellis.clrLED(i);
@@ -186,7 +193,7 @@ void updateControl(){
     } 
     del.start();
   }
-  
+
   trellis.writeDisplay(); //Change LEDs
 }
 
@@ -199,6 +206,8 @@ int updateAudio() {
 void loop() {
   audioHook();
 }
+
+
 
 
 
