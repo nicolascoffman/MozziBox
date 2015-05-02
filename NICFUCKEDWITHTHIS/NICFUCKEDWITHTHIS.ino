@@ -195,6 +195,10 @@ void setup(){
   }
   trellis.writeDisplay();
 
+
+
+
+
   Serial.begin(9600); // for Teensy 3.0/3.1, beware printout can cause glitches
   startMozzi();
 }
@@ -253,18 +257,18 @@ void updateControl(){
     int gainer = map(new1, 100, -100, -28, 30);
   audioamp.setGain(gainer);
 
-    Serial.print(gainer);
+    Serial.println(audioamp.getGain());
     
-//Update Display
-lcd.setCursor(0,0);
-lcd.print("Volume");
-LCD_progress_bar(1, gainer, -28, 30);
-      
+LCD_progress_bar(0, gainer, -28, 30);
+
+lcd.setCursor(0, 1);
+lcd.print("Volume"); 
+
       } else if(new2 != position2 || new3 != position3 || new4 != position4){}
       
       
-      
-      
+ 
+  
       
       
 //Update Positions
