@@ -34,6 +34,10 @@
 #include <Sample.h> // Sample template
 #include <samples/burroughs1_18649_int8.h> // a converted audio sample included in the Mozzi download
 #include <EventDelay.h>
+#include "Adafruit_TPA2016.h" //Amp
+
+// Declare amp ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adafruit_TPA2016 audioamp = Adafruit_TPA2016();
 
 // Bamboo Samples ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -69,7 +73,7 @@ const int8_t * tables[16] ={
   BAMBOO_08_2048_DATA,
   BAMBOO_09_2048_DATA,
   BAMBOO_10_2048_DATA,
-//  BURROUGHS1_18649_DATA,
+  //  BURROUGHS1_18649_DATA,
 
   Blop_DATA,
   clap_DATA,
@@ -91,7 +95,7 @@ const int sampleRates[16] {
   BAMBOO_08_2048_SAMPLERATE,
   BAMBOO_09_2048_SAMPLERATE,
   BAMBOO_10_2048_SAMPLERATE,
-//  BURROUGHS1_18649_SAMPLERATE,
+  //  BURROUGHS1_18649_SAMPLERATE,
   Blop_SAMPLERATE,
   clap_SAMPLERATE,
   HH_closed_SAMPLERATE,
@@ -111,8 +115,8 @@ const int numCells[16] {
   BAMBOO_07_2048_NUM_CELLS,
   BAMBOO_08_2048_NUM_CELLS,
   BAMBOO_09_2048_NUM_CELLS,
-BAMBOO_10_2048_NUM_CELLS,
-//  BURROUGHS1_18649_NUM_CELLS,
+  BAMBOO_10_2048_NUM_CELLS,
+  //  BURROUGHS1_18649_NUM_CELLS,
   Blop_NUM_CELLS,
   clap_NUM_CELLS,
   HH_closed_NUM_CELLS,
@@ -147,6 +151,15 @@ boolean triggered[16];  // For controlling Trellis key presses
 EventDelay del;
 
 void setup(){
+  // Configure Amp
+  audioamp.begin();
+
+  audioamp.setAGCCompression(TPA2016_AGC_OFF); // Turn off AGC 
+  // we also have to turn off the release to really turn off AGC
+  audioamp.setReleaseControl(0);
+  audioamp.setGain(30);
+
+
   aSample.setFreq(recorded_pitch);
 
 
@@ -213,6 +226,7 @@ int updateAudio() {
 void loop() {
   audioHook();
 }
+
 
 
 
