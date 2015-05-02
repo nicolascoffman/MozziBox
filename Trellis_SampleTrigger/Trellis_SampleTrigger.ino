@@ -48,12 +48,20 @@
 #include <samples/bamboo/bamboo_08_2048_int8.h> // wavetable data
 #include <samples/bamboo/bamboo_09_2048_int8.h> // wavetable data
 #include <samples/bamboo/bamboo_10_2048_int8.h> // wavetable data
+// Nic Samples
+#include <samples/blop.h>
+#include <samples/clap.h>
+#include <samples/HH_closed.h>
+#include <samples/HH_open.h>
+#include <samples/kick.h>
+#include <samples/snare.h>
+#include <samples/strike.h>
 
 
 
 const int8_t * tables[16] ={
-  BAMBOO_00_2048_DATA,
-  BAMBOO_01_2048_DATA,
+//  BAMBOO_00_2048_DATA,
+//  BAMBOO_01_2048_DATA,
   BAMBOO_02_2048_DATA,
   BAMBOO_03_2048_DATA,
   BAMBOO_04_2048_DATA,
@@ -63,6 +71,14 @@ const int8_t * tables[16] ={
   BAMBOO_08_2048_DATA,
   BAMBOO_09_2048_DATA,
   BAMBOO_10_2048_DATA,
+  Blop_DATA,
+  clap_DATA,
+  HH_closed_DATA,
+  HH_open_DATA,
+  kick_DATA,
+  snare_DATA,
+  strike_DATA
+  
 };
 
 // Trellis stuff ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +112,7 @@ boolean triggered[16];
 void setup(){
 
   // Set EventDelays
-  del.set(30);
+  del.set(2 0);
   lightDel.set(500);
   
   // Set key trigger array
@@ -144,11 +160,10 @@ void updateControl(){
     }
   }
 
-
   // Read Trellis input
   if (del.ready()) {
     if (trellis.readSwitches()) {
-      for (uint8_t i=0; i < 11; i++) {
+      for (uint8_t i=0; i < numKeys; i++) {
 
         if (!triggered[i]) {
           if (trellis.justPressed(i)) {
