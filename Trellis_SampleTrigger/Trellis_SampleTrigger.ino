@@ -139,6 +139,8 @@ boolean triggered[16];  // For controlling Trellis key presses
 EventDelay del;
 
 void setup(){
+  aSample.setFreq(recorded_pitch);
+  
 
   del.set(30);   // Set EventDelay
 
@@ -177,7 +179,7 @@ void updateControl(){
             triggered[i] = true;
             
             aSample.setTable(tables[i]);
-            aSample.setFreq((float) sampleRates[i] / (float) numCells[i]);
+//            aSample.setFreq((float) sampleRates[i] / (float) numCells[i]);
             aSample.start();
 
             //samples[i].start();
